@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flame's Projects | Demonlist</title>
+    <style>
+        :root {
+            --bg-color: #0d0d0d;
+            --container-bg: #1a1a1a;
+            --accent-color: #ff4d4d;
+            --text-color: #f0f0f0;
+            --sub-text: #999;
+            --border-color: #2a2a2a;
+            --main-list: #ff4d4d;
+            --extended-list: #3498db;
+            --challenge-list: #f1c40f;
+            --standard-list: #2ecc71;
+        }
+
+        body { font-family: 'Inter', 'Segoe UI', sans-serif; background-color: var(--bg-color); color: var(--text-color); margin: 0; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        .header { text-align: center; margin-bottom: 40px; }
+        h1 { color: var(--accent-color); text-transform: uppercase; letter-spacing: 4px; font-size: 2.5em; margin-bottom: 5px; }
+
+        .search-container { margin-bottom: 30px; width: 100%; max-width: 400px; }
+        #searchBar { width: 100%; background: #222; border: 1px solid var(--border-color); color: white; padding: 12px; border-radius: 6px; text-align: center; }
+
+        #adminPanel { display: none; background: #222; border: 2px dashed var(--accent-color); border-radius: 8px; padding: 20px; margin-bottom: 30px; width: 100%; max-width: 700px; }
+        .input-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1.5fr; gap: 10px; margin-bottom: 10px; }
+        .input-grid input, select { background: #111; border: 1px solid var(--border-color); color: white; padding: 10px; border-radius: 4px; }
+        .full-input { width: 100%; box-sizing: border-box; margin-bottom: 10px; background: #111; border: 1px solid var(--border-color); color: white; padding: 10px; border-radius: 4px;}
+        .add-btn { width: 100%; background: var(--accent-color); color: white; border: none; padding: 12px; font-weight: bold; cursor: pointer; border-radius: 4px; }
+
+        .category-title { width: 100%; max-width: 900px; margin: 40px 0 15px 0; padding-left: 10px; border-left: 5px solid white; text-transform: uppercase; letter-spacing: 2px; }
+        .cat-main { border-color: var(--main-list); color: var(--main-list); }
+        .cat-extended { border-color: var(--extended-list); color: var(--extended-list); }
+        .cat-challenge { border-color: var(--challenge-list); color: var(--challenge-list); }
+        .cat-standard { border-color: var(--standard-list); color: var(--standard-list); }
+
+        .list-container { width: 100%; max-width: 900px; }
+        .project-card { background: var(--container-bg); border: 1px solid var(--border-color); margin-bottom: 10px; padding: 15px; display: flex; align-items: center; border-radius: 4px; }
+        .rank-box { font-size: 1.8em; font-weight: 900; color: #fff; margin-right: 20px; min-width: 60px; opacity: 0.8; }
+        .details { flex-grow: 1; }
+        .proj-name { font-size: 1.3em; font-weight: bold; margin-right: 10px; }
+        .status-badge { padding: 2px 6px; border-radius: 3px; font-size: 0.7em; font-weight: bold; vertical-align: middle; }
+        .sub-info { color: var(--sub-text); font-size: 0.85em; margin-top: 5px; }
+        .video-link { color: #5dade2; text-decoration: none; }
+
+        .changelog { width: 100%; max-width: 900px; background: #111; padding: 20px; border-radius: 8px; margin-top: 50px; border: 1px solid #333; }
+        .log-entry { font-size: 0.85em; color: #888; padding: 5px 0; border-bottom: 1px solid #222; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>Flame's Projects</h1>
+    </div>
+
+    <div class="search-container">
+        <input type="text" id="searchBar" placeholder="Search" oninput="checkAuth()">
+    </div>
+
+    <div id="adminPanel">
+        <h3 style="margin-top: 0; color: var(--accent-color);">Editor Mode</h3>
+        <div class="input-grid">
+            <input type="text" id="projName" placeholder="Level Name">
+            <input type="number" id="projRank" placeholder="Rank">
+            <input type="number" id="projStaff" placeholder="Team">
+            <select id="projCat">
+                <option value="main">Main List</option>
+                <option value="extended">Extended List</option>
+                <option value="challenge">Challenge List</option>
+                <option value="standard">Standard List</option>
+            </select>
+        </div>
+        <div class="input-grid" style="grid-template-columns: 1fr 1fr 1fr;">
+            <input type="text" id="projDiff" placeholder="Expected Difficulty">
+            <input type="text" id="projVerifier" placeholder="Verifier">
+            <select id="projStatus">
+                <option value="Layout">Layout</option>
+                <option value="Decorating">Decorating</option>
+                <option value="Verifying">Verifying</option>
+                <option value="Verified">Verified</option>
+            </select>
+        </div>
+        <input type="text" id="projVideo" class="full-input" placeholder="Video Link">
+        <button class="add-btn" onclick="addProject()">Post Project</button>
+    </div>
+
+    <div id="listsWrapper"></div>
+
+    <div class="changelog">
+        <h4 style="margin-top:0">Changelog</h4>
+        <div id="logContent"></div>
+    </div>
+
+    <script>
+        let projects = JSON.parse(localStorage.getItem('flameProjectsV4')) || [];
+        let logs = JSON.parse(localStorage.getItem('flameLogs')) || [];
+
+        function checkAuth() {
+            if (document.getElementById('searchBar').value === "FlameTED1") {
+                document.getElementById('adminPanel').style.display = "block";
+                document.getElementById('searchBar').value = "";
+            }
+        }
+
+        function addLog(msg) {
+            const time = new Date().toLocaleString();
+            logs.unshift(`[${time}] ${msg}`);
+            if(logs.length > 10) logs.pop();
+            localStorage.setItem('flameLogs', JSON.stringify(logs));
+            renderLogs();
+        }
+
+        function renderLogs() {
+            document.getElementById('logContent').innerHTML = logs.map(l => `<div class="log-entry">${l}</div>`).join('');
+        }
+
+        function renderList() {
+            const wrapper = document.getElementById('listsWrapper');
+            wrapper.innerHTML = '';
+            
+            const categories = [
+                { id: 'main', name: 'Main List', class: 'cat-main' },
+                { id: 'extended', name: 'Extended List', class: 'cat-extended' },
+                { id: 'challenge', name: 'Challenge List', class: 'cat-challenge' },
+                { id: 'standard', name: 'Standard List', class: 'cat-standard' }
+            ];
+
+            categories.forEach(cat => {
+                const catProjs = projects.filter(p => p.category === cat.id).sort((a,b) => a.rank - b.rank);
+                if(catProjs.length > 0 || cat.id === 'main') {
+                    wrapper.innerHTML += `<h2 class="category-title ${cat.class}">${cat.name}</h2><div id="list-${cat.id}" class="list-container"></div>`;
+                    const container = document.getElementById(`list-${cat.id}`);
+                    catProjs.forEach((proj, idx) => {
+                        container.innerHTML += `
+                            <div class="project-card">
+                                <div class="rank-box">#${proj.rank}</div>
+                                <div class="details">
+                                    <span class="proj-name">${proj.name}</span>
+                                    <span class="status-badge" style="background:#444">${proj.status}</span>
+                                    <div class="sub-info">
+                                        <b>${proj.diff}</b> | Verifier: <b>${proj.verifier}</b> | Team: <b>${proj.staff}</b> | 
+                                        <a href="${proj.video}" target="_blank" class="video-link">Link</a>
+                                        <button onclick="deleteProject('${proj.name}')" style="background:none; border:none; color:red; cursor:pointer; font-size:0.8em; margin-left:10px;">[Delete]</button>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                }
+            });
+            localStorage.setItem('flameProjectsV4', JSON.stringify(projects));
+            renderLogs();
+        }
+
+        function addProject() {
+            const name = document.getElementById('projName').value;
+            const cat = document.getElementById('projCat').value;
+            if (name) {
+                projects.push({
+                    name: name,
+                    rank: parseInt(document.getElementById('projRank').value) || 0,
+                    staff: document.getElementById('projStaff').value || "1",
+                    category: cat,
+                    diff: document.getElementById('projDiff').value || "TBD",
+                    verifier: document.getElementById('projVerifier').value || "N/A",
+                    status: document.getElementById('projStatus').value,
+                    video: document.getElementById('projVideo').value || "#"
+                });
+                addLog(`Added "${name}" to ${cat.toUpperCase()} List.`);
+                renderList();
+            }
+        }
+
+        function deleteProject(name) {
+            if(confirm("Delete " + name + "?")) {
+                projects = projects.filter(p => p.name !== name);
+                addLog(`Removed "${name}" from the list.`);
+                renderList();
+            }
+        }
+
+        renderList();
+    </script>
+</body>
+</html>
